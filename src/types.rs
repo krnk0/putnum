@@ -9,9 +9,10 @@ pub struct Lit {
 pub type Clause  = Vec<Lit>;
 pub type Formula = Vec<Clause>;
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Val { True, False, Undef }
 
+#[derive(Debug, PartialEq)]
 pub struct Model {
     vals: Vec<Val>,
     trail: Vec<Var>,
@@ -25,6 +26,12 @@ impl Model {
     pub fn assign(&mut self, v: Var, val: Val)    {
         self.vals[v] = val;
         self.trail.push(v);
+    }
+    pub fn clone(&self) -> Self {
+        Self {
+            vals: self.vals.clone(),
+            trail: self.trail.clone(),
+        }
     }
     pub fn is_true(&self, l: Lit) -> bool {
         match (self.value(l.var), l.neg) {
