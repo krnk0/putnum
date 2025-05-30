@@ -12,7 +12,7 @@
 | Core types (`Var`, `Lit`, `Model`) | ✅      | Simple `Vec`‑backed model + trail                                   |
 | Unit Propagation                   | ✅      | Queue‑driven, retains only `Undef` literals, detects contradictions |
 | DPLL search                        | ✅      | Complete recursive back‑tracking solver with variable selection     |
-| CLI (`putnam`)                     | ⏳      | File I/O, SAT/UNSAT output, optional model dump                     |
+| CLI (`putnam`)                     | ✅      | File I/O, SAT/UNSAT output, optional model dump                     |
 
 ---
 
@@ -29,7 +29,7 @@ putnam/
 │       ├── mod.rs        # solver namespace
 │       ├── unit.rs       # unit_propagate()
 │       └── dpll.rs       # complete DPLL solver implementation
-├── src/bin/putnam.rs     # (planned) CLI entry
+├── src/bin/putnam.rs     # (complete) CLI entry
 ├── tests/                # integration tests
 ├── benches/              # Criterion benches (planned)
 └── LICENSE               # MIT License
@@ -43,7 +43,7 @@ putnam/
   * [x] Implement DIMACS parser + unit tests
   * [x] Add queue‑based unit propagation
   * [x] Finish naïve DPLL recursion + tiny SAT/UNSAT test‑suite
-  * [ ] CLI `putnam <file.cnf>` with `--model` flag
+  * [x] CLI `putnam <file.cnf>` with `--model` flag
   * [ ] Criterion benchmark harness (SATLIB tiny set)
   * [ ] Watched‑literal rewrite for O(1) propagation
   * [ ] VSIDS / JW variable heuristics
@@ -63,12 +63,23 @@ $ cd putnam
 $ cargo test            # run unit tests
 ```
 
-After DPLL lands:
+Usage:
 
 ```bash
-$ cargo run --bin putnam -- examples/uf20-03.cnf
+# Build and test
+$ cargo test            # run unit tests
+$ cargo build           # build CLI binary
+
+# Run SAT solver
+$ cargo run --bin putnam examples/simple.cnf
 SAT
-v 1 -2 3 ... 0
+
+$ cargo run --bin putnam examples/simple.cnf --model
+SAT
+v 1 -2 0
+
+$ cargo run --bin putnam examples/unsat.cnf  
+UNSAT
 ```
 
 ---

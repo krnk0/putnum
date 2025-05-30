@@ -1,11 +1,12 @@
 use std::io::{self, BufRead};
+use crate::types::{Lit, Clause, Formula, Var};
 
 #[derive(Debug, Copy, Clone)]
-struct Literal(i32);           // 正負込み
-type Clause = Vec<Literal>;
-type Formula = Vec<Clause>;
+struct DimacsLiteral(i32);           // 正負込み
+type DimacsClause = Vec<DimacsLiteral>;
+type DimacsFormula = Vec<DimacsClause>;
 
-fn parse_dimacs<R: BufRead>(mut r: R) -> io::Result<Formula> {
+fn parse_dimacs<R: BufRead>(mut r: R) -> io::Result<DimacsFormula> {
     let mut formula = Vec::new();
 
     for line in r.lines() {
@@ -20,7 +21,7 @@ fn parse_dimacs<R: BufRead>(mut r: R) -> io::Result<Formula> {
                     .split_whitespace()
                     .map(|tok| tok.parse::<i32>().unwrap())
                     .take_while(|&n| n != 0)                     // 末尾 0 を捨てる
-                    .map(Literal)
+                    .map(DimacsLiteral)
                     .collect::<Vec<_>>();
                 formula.push(lits);
             }
@@ -28,12 +29,40 @@ fn parse_dimacs<R: BufRead>(mut r: R) -> io::Result<Formula> {
     }
     Ok(formula)
 }
+
+pub fn convert_to_internal(dimacs_formula: DimacsFormula) -> (Formula, usize) {
+    let mut max_var = 0;
+    let mut formula = Vec::new();
+    
+    for dimacs_clause in dimacs_formula {
+        let mut clause = Vec::new();
+        for dimacs_lit in dimacs_clause {
+            let var_num = dimacs_lit.0.abs() as usize;
+            if var_num > 0 {
+                let var = var_num - 1; // Convert to 0-based
+                max_var = max_var.max(var);
+                clause.push(Lit {
+                    var,
+                    neg: dimacs_lit.0 < 0,
+                });
+            }
+        }
+        formula.push(clause);
+    }
+    
+    (formula, max_var + 1)
+}
+
+pub fn parse_and_convert<R: BufRead>(reader: R) -> io::Result<(Formula, usize)> {
+    let dimacs_formula = parse_dimacs(reader)?;
+    Ok(convert_to_internal(dimacs_formula))
+}
 #[cfg(test)]
 mod tests {
-    use super::*;                 // parse_dimacs, Literal, Formula が見えるように
+    use super::*;                 // parse_dimacs, DimacsLiteral, DimacsFormula が見えるように
 
     /// 文字列から直接パースするヘルパ
-    fn parse_str(src: &str) -> Formula {
+    fn parse_str(src: &str) -> DimacsFormula {
         parse_dimacs(src.as_bytes()).expect("parse failed")
     }
 
