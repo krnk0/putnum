@@ -1,12 +1,12 @@
 use std::io::{self, BufRead};
-use crate::types::{Lit, Clause, Formula, Var};
+use crate::types::{Lit, Formula};
 
 #[derive(Debug, Copy, Clone)]
 struct DimacsLiteral(i32);           // 正負込み
 type DimacsClause = Vec<DimacsLiteral>;
 type DimacsFormula = Vec<DimacsClause>;
 
-fn parse_dimacs<R: BufRead>(mut r: R) -> io::Result<DimacsFormula> {
+fn parse_dimacs<R: BufRead>(r: R) -> io::Result<DimacsFormula> {
     let mut formula = Vec::new();
 
     for line in r.lines() {
@@ -30,7 +30,7 @@ fn parse_dimacs<R: BufRead>(mut r: R) -> io::Result<DimacsFormula> {
     Ok(formula)
 }
 
-pub fn convert_to_internal(dimacs_formula: DimacsFormula) -> (Formula, usize) {
+fn convert_to_internal(dimacs_formula: DimacsFormula) -> (Formula, usize) {
     let mut max_var = 0;
     let mut formula = Vec::new();
     
@@ -59,7 +59,10 @@ pub fn parse_and_convert<R: BufRead>(reader: R) -> io::Result<(Formula, usize)> 
 }
 #[cfg(test)]
 mod tests {
-    use super::*;                 // parse_dimacs, DimacsLiteral, DimacsFormula が見えるように
+    use super::*;
+    use crate::solve;
+    use crate::solver::dpll::SolveResult;
+    use crate::types::Val;
 
     /// 文字列から直接パースするヘルパ
     fn parse_str(src: &str) -> DimacsFormula {
@@ -104,6 +107,30 @@ p cnf 3 2
 
         assert_eq!(f.len(), 1);            // 節は 1 個
         assert!(f[0].is_empty());          // その節が空
+    }
+
+    /// 統合テスト: DIMACS → 内部表現 → ソルバー
+    #[test]
+    fn integration_parse_and_solve() {
+        // Simple SAT case: (x1) AND (NOT x2)
+        let (formula, num_vars) = parse_and_convert("p cnf 2 2\n1 0\n-2 0\n".as_bytes()).unwrap();
+        
+        assert_eq!(num_vars, 2);
+        assert_eq!(formula.len(), 2);
+        
+        match solve(&formula, num_vars) {
+            SolveResult::Sat(model) => {
+                assert_eq!(model.value(0), Val::True);   // x1 = True
+                assert_eq!(model.value(1), Val::False);  // x2 = False
+            }
+            SolveResult::Unsat => panic!("Expected SAT")
+        }
+        
+        // Simple UNSAT case: (x1) AND (NOT x1)
+        let (formula, num_vars) = parse_and_convert("p cnf 1 2\n1 0\n-1 0\n".as_bytes()).unwrap();
+        
+        assert_eq!(num_vars, 1);
+        assert_eq!(solve(&formula, num_vars), SolveResult::Unsat);
     }
 }
 

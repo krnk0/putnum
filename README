@@ -8,7 +8,7 @@
 
 | Area                               | Status | Notes                                                               |
 | ---------------------------------- | ------ | ------------------------------------------------------------------- |
-| DIMACS CNF parser                  | ✅      | Handles comments, empty clauses, declaration checks                 |
+| DIMACS CNF parser                  | ✅      | Complete with type conversion, integration tests, clean API                 |
 | Core types (`Var`, `Lit`, `Model`) | ✅      | Simple `Vec`‑backed model + trail                                   |
 | Unit Propagation                   | ✅      | Queue‑driven, retains only `Undef` literals, detects contradictions |
 | DPLL search                        | ✅      | Complete recursive back‑tracking solver with variable selection     |
@@ -40,7 +40,7 @@ putnam/
 ## Roadmap
 
 
-  * [x] Implement DIMACS parser + unit tests
+  * [x] Implement DIMACS parser + unit tests + integration tests
   * [x] Add queue‑based unit propagation
   * [x] Finish naïve DPLL recursion + tiny SAT/UNSAT test‑suite
   * [x] CLI `putnam <file.cnf>` with `--model` flag
@@ -60,14 +60,14 @@ putnam/
 # clone & build
 $ git clone https://github.com/your‑nick/putnam
 $ cd putnam
-$ cargo test            # run unit tests
+$ cargo test            # run unit + integration tests
 ```
 
 Usage:
 
 ```bash
 # Build and test
-$ cargo test            # run unit tests
+$ cargo test            # run unit + integration tests
 $ cargo build           # build CLI binary
 
 # Run SAT solver
