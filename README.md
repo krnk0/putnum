@@ -8,7 +8,7 @@
 
 | Area                               | Status | Notes                                                               |
 | ---------------------------------- | ------ | ------------------------------------------------------------------- |
-| DIMACS CNF parser                  | ✅      | Complete with type conversion, integration tests, clean API                 |
+| DIMACS CNF parser                  | ✅      | Handles comments, empty clauses, declaration checks                 |
 | Core types (`Var`, `Lit`, `Model`) | ✅      | Simple `Vec`‑backed model + trail                                   |
 | Unit Propagation                   | ✅      | Queue‑driven, retains only `Undef` literals, detects contradictions |
 | DPLL search                        | ✅      | Complete recursive back‑tracking solver with variable selection     |
@@ -29,9 +29,10 @@ putnam/
 │       ├── mod.rs        # solver namespace
 │       ├── unit.rs       # unit_propagate()
 │       └── dpll.rs       # complete DPLL solver implementation
-├── src/bin/putnam.rs     # (complete) CLI entry
+├── src/bin/putnam.rs     # (planned) CLI entry
 ├── tests/                # integration tests
-├── benches/              # Criterion benches (planned)
+├── benches/              # Criterion benchmark suite
+├── benchmarks/           # Test problems (SAT/UNSAT instances)
 └── LICENSE               # MIT License
 ```
 
@@ -43,8 +44,8 @@ putnam/
   * [x] Implement DIMACS parser + unit tests + integration tests
   * [x] Add queue‑based unit propagation
   * [x] Finish naïve DPLL recursion + tiny SAT/UNSAT test‑suite
-  * [x] CLI `putnam <file.cnf>` with `--model` flag
-  * [ ] Criterion benchmark harness (SATLIB tiny set)
+  * [ ] CLI `putnam <file.cnf>` with `--model` flag
+  * [x] Criterion benchmark harness (pigeonhole, chain problems)
   * [ ] Watched‑literal rewrite for O(1) propagation
   * [ ] VSIDS / JW variable heuristics
   * [ ] Conflict‐Driven Clause Learning (CDCL)
@@ -68,18 +69,12 @@ Usage:
 ```bash
 # Build and test
 $ cargo test            # run unit + integration tests
-$ cargo build           # build CLI binary
+$ cargo bench           # run performance benchmarks
 
-# Run SAT solver
-$ cargo run --bin putnam examples/simple.cnf
-SAT
-
-$ cargo run --bin putnam examples/simple.cnf --model
-SAT
-v 1 -2 0
-
-$ cargo run --bin putnam examples/unsat.cnf  
-UNSAT
+# Current benchmark results (naive DPLL):
+# simple_3var_sat:      ~144ns
+# pigeonhole 4→3:       ~723μs  
+# pigeonhole 5→4:       ~253ms (optimization target)
 ```
 
 ---
