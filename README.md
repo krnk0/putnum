@@ -21,6 +21,10 @@
 ```text
 putnam/
 ├── Cargo.toml            # crate metadata
+├── docs/                 # high-level documentation
+│   ├── architecture.md   # system design & philosophy
+│   ├── tutorial.md       # beginner-friendly guide
+│   └── CLAUDE.md         # developer notes
 ├── src/
 │   ├── lib.rs            # public re‑exports & docs
 │   ├── types.rs          # core data structures
@@ -29,7 +33,7 @@ putnam/
 │       ├── mod.rs        # solver namespace
 │       ├── unit.rs       # unit_propagate()
 │       └── dpll.rs       # complete DPLL solver implementation
-├── src/bin/putnam.rs     # (planned) CLI entry
+├── src/bin/putnam.rs     # CLI entry point
 ├── tests/                # integration tests
 ├── benches/              # Criterion benchmark suite
 ├── benchmarks/           # Test problems (SAT/UNSAT instances)
@@ -44,7 +48,7 @@ putnam/
   * [x] Implement DIMACS parser + unit tests + integration tests
   * [x] Add queue‑based unit propagation
   * [x] Finish naïve DPLL recursion + tiny SAT/UNSAT test‑suite
-  * [ ] CLI `putnam <file.cnf>` with `--model` flag
+  * [x] CLI `putnam <file.cnf>` with `--model` flag
   * [x] Criterion benchmark harness (pigeonhole, chain problems)
   * [ ] Watched‑literal rewrite for O(1) propagation
   * [ ] VSIDS / JW variable heuristics
@@ -64,17 +68,31 @@ $ cd putnam
 $ cargo test            # run unit + integration tests
 ```
 
-Usage:
+### Usage
 
 ```bash
 # Build and test
 $ cargo test            # run unit + integration tests
 $ cargo bench           # run performance benchmarks
 
+# Run the CLI solver
+$ cargo run --bin putnam examples/simple.cnf
+$ cargo run --bin putnam examples/simple.cnf -- --model
+
 # Current benchmark results (naive DPLL):
 # simple_3var_sat:      ~144ns
 # pigeonhole 4→3:       ~723μs  
 # pigeonhole 5→4:       ~253ms (optimization target)
+```
+
+### Documentation
+
+```bash
+# View API documentation
+$ cargo doc --open
+
+# Browse guides
+$ ls docs/                    # architecture, tutorial, CLAUDE.md
 ```
 
 ---
