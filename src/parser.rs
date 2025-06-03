@@ -1,11 +1,68 @@
+//! DIMACS CNF format parser
+//! 
+//! This module provides functionality to parse DIMACS CNF (Conjunctive Normal Form)
+//! files and convert them to the internal representation used by the solver.
+//!
+//! The DIMACS format is the standard format for representing SAT problems.
+//! It consists of:
+//! - Comment lines starting with 'c'
+//! - A problem line starting with 'p cnf' followed by variable count and clause count
+//! - Clause lines containing space-separated literals, terminated by 0
+//!
+//! # Example DIMACS file
+//!
+//! ```text
+//! c This is a comment
+//! p cnf 3 2
+//! 1 -3 0
+//! 2 3 -1 0
+//! ```
+
 use std::io::{self, BufRead};
 use crate::types::{Lit, Formula};
 
+/// Internal representation of a DIMACS literal (with sign)
 #[derive(Debug, Copy, Clone)]
-struct DimacsLiteral(i32);           // 正負込み
+struct DimacsLiteral(i32);
+
+/// Internal representation of a DIMACS clause
 type DimacsClause = Vec<DimacsLiteral>;
+
+/// Internal representation of a DIMACS formula
 type DimacsFormula = Vec<DimacsClause>;
 
+/// Parses a DIMACS CNF format from a reader.
+///
+/// This function reads DIMACS format line by line, ignoring comments
+/// and problem declarations, and extracting clauses.
+///
+/// # Arguments
+///
+/// * `r` - A reader implementing `BufRead` trait
+///
+/// # Returns
+///
+/// * `Ok(DimacsFormula)` - The parsed formula in DIMACS representation
+/// * `Err(io::Error)` - If reading fails
+///
+/// # Format Details
+///
+/// - Lines starting with 'c' or '%' are treated as comments
+/// - Lines starting with 'p' are problem declarations (ignored)
+/// - Other lines contain clauses: space-separated integers ending with 0
+/// - Positive integers represent positive literals
+/// - Negative integers represent negative literals
+///
+/// # Examples
+///
+/// ```no_run
+/// use std::io::Cursor;
+/// # use putnam::parser::*;
+/// 
+/// let input = "c comment\np cnf 2 1\n1 -2 0\n";
+/// let reader = Cursor::new(input);
+/// // let result = parse_dimacs(reader)?;
+/// ```
 fn parse_dimacs<R: BufRead>(r: R) -> io::Result<DimacsFormula> {
     let mut formula = Vec::new();
 
@@ -30,6 +87,32 @@ fn parse_dimacs<R: BufRead>(r: R) -> io::Result<DimacsFormula> {
     Ok(formula)
 }
 
+/// Converts DIMACS representation to internal solver representation.
+///
+/// This function performs several transformations:
+/// - Converts 1-based DIMACS variable numbering to 0-based internal numbering
+/// - Converts `DimacsLiteral` to internal `Lit` structures
+/// - Determines the maximum variable number for model initialization
+///
+/// # Arguments
+///
+/// * `dimacs_formula` - The formula in DIMACS representation
+///
+/// # Returns
+///
+/// A tuple containing:
+/// * `Formula` - The formula in internal representation
+/// * `usize` - The number of variables in the formula
+///
+/// # Examples
+///
+/// ```no_run
+/// # use putnam::parser::*;
+/// # use putnam::types::*;
+/// // Assuming we have a DimacsFormula
+/// # let dimacs_formula = vec![];
+/// let (formula, num_vars) = convert_to_internal(dimacs_formula);
+/// ```
 fn convert_to_internal(dimacs_formula: DimacsFormula) -> (Formula, usize) {
     let mut max_var = 0;
     let mut formula = Vec::new();
@@ -53,6 +136,47 @@ fn convert_to_internal(dimacs_formula: DimacsFormula) -> (Formula, usize) {
     (formula, max_var + 1)
 }
 
+/// Parses DIMACS CNF format and converts to internal representation.
+///
+/// This is the main public interface for parsing DIMACS files. It combines
+/// the parsing and conversion steps into a single convenient function.
+///
+/// # Arguments
+///
+/// * `reader` - A reader implementing `BufRead` trait (e.g., `BufReader<File>`)
+///
+/// # Returns
+///
+/// * `Ok((Formula, usize))` - The parsed formula and variable count
+/// * `Err(io::Error)` - If reading or parsing fails
+///
+/// # Examples
+///
+/// ```no_run
+/// use std::fs::File;
+/// use std::io::BufReader;
+/// use putnam::parser::parse_and_convert;
+///
+/// let file = File::open("example.cnf")?;
+/// let reader = BufReader::new(file);
+/// let (formula, num_vars) = parse_and_convert(reader)?;
+/// 
+/// println!("Parsed {} variables and {} clauses", num_vars, formula.len());
+/// # Ok::<(), std::io::Error>(())
+/// ```
+///
+/// # DIMACS Format
+///
+/// The function expects standard DIMACS CNF format:
+/// ```text
+/// c Optional comments
+/// p cnf <num_vars> <num_clauses>
+/// <literal1> <literal2> ... 0
+/// <literal1> <literal2> ... 0
+/// ...
+/// ```
+///
+/// Where literals are non-zero integers (positive for variables, negative for negations).
 pub fn parse_and_convert<R: BufRead>(reader: R) -> io::Result<(Formula, usize)> {
     let dimacs_formula = parse_dimacs(reader)?;
     Ok(convert_to_internal(dimacs_formula))
